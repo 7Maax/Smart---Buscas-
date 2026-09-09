@@ -10,6 +10,7 @@ let createSearch: typeof import("@/lib/services/search").createSearch;
 let findProperty: typeof import("@/lib/properties").findProperty;
 let seedDemoListings: typeof import("@/lib/services/demo-seed").seedDemoListings;
 let createPropertySearch: typeof import("@/lib/services/property-searches").createPropertySearch;
+let completeAuctionPropertySearch: typeof import("@/lib/services/property-searches").completeAuctionPropertySearch;
 let findPropertySearch: typeof import("@/lib/services/property-searches").findPropertySearch;
 let propertySearchProperties: typeof import("@/lib/services/property-searches").propertySearchProperties;
 
@@ -37,6 +38,7 @@ beforeAll(async () => {
   seedDemoListings = (await import("@/lib/services/demo-seed")).seedDemoListings;
   const propertySearches = await import("@/lib/services/property-searches");
   createPropertySearch = propertySearches.createPropertySearch;
+  completeAuctionPropertySearch = propertySearches.completeAuctionPropertySearch;
   findPropertySearch = propertySearches.findPropertySearch;
   propertySearchProperties = propertySearches.propertySearchProperties;
   database = await databaseModule.db();
@@ -113,6 +115,23 @@ describe("fluxos essenciais com PostgreSQL", () => {
     expect(repeated).toMatchObject({ created: false, cacheHit: false });
     expect(repeated.search.id).toBe(first.search.id);
     expect(repeated.search.status).toBe("PENDING");
+  });
+
+  it("conclui pesquisa de leilão sem aguardar o coletor de portais", async () => {
+    const created = await createPropertySearch({
+      city: "Belo Horizonte",
+      state: "MG",
+      transaction: "AUCTION",
+    });
+
+    await completeAuctionPropertySearch(created.search.id);
+    const completed = await findPropertySearch(database, created.search.id);
+
+    expect(completed).toMatchObject({
+      transaction: "AUCTION",
+      status: "COMPLETED",
+      propertiesFound: 0,
+    });
   });
 
   it("expira uma pesquisa ativa antiga antes de criar outra igual", async () => {

@@ -5,7 +5,8 @@ CREATE TABLE property_searches (
     city TEXT NOT NULL,
     state TEXT NOT NULL,
     neighborhood TEXT,
-    transaction TEXT NOT NULL CHECK (transaction IN ('SALE', 'RENT')),
+    transaction TEXT NOT NULL CONSTRAINT property_searches_transaction_check
+        CHECK (transaction IN ('SALE', 'RENT')),
     property_type TEXT,
     min_price NUMERIC,
     max_price NUMERIC,

@@ -508,8 +508,9 @@ function normalized(value: string | null | undefined) {
     SALA: "COMMERCIAL",
     LOJA: "COMMERCIAL",
     VENDA: "SALE",
-    LEILAO: "SALE",
-    ALIENACAO: "SALE",
+    AUCTION: "AUCTION",
+    LEILAO: "AUCTION",
+    ALIENACAO: "AUCTION",
     ALUGUEL: "RENT",
     LOCACAO: "RENT",
   };

@@ -41,6 +41,7 @@ export type NormalizedListing = Omit<PropertyRow, "id"> & {
 };
 
 export type PropertyTransaction = "SALE" | "RENT";
+export type PropertySearchTransaction = PropertyTransaction | "AUCTION";
 
 export type CollectorPropertyRow = {
   id: number;
@@ -141,7 +142,7 @@ export type PropertySearchRow = {
   city: string;
   state: string;
   neighborhood: string | null;
-  transaction: PropertyTransaction;
+  transaction: PropertySearchTransaction;
   property_type: string | null;
   min_price: number | string | null;
   max_price: number | string | null;

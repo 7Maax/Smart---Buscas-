@@ -112,6 +112,7 @@ def process_property_search(search_id=None):
             collector
             for collector in get_enabled_collectors()
             if collector.source not in disabled_sources
+            and collector.source != "MONGO"
         ]
         if not collectors:
             raise TemporaryCollectorError(

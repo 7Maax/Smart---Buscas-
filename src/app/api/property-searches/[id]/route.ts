@@ -35,34 +35,17 @@ export async function GET(
         { status: 404 },
       );
     }
-    const mongoRunsInCollector = enabledCollectorSources().includes("MONGO");
-    const [result, mongoResult] = await Promise.all([
-      propertySearchProperties(database, search),
-      mongoRunsInCollector
-        ? Promise.resolve<MongoPropertySourceResult>({
-            properties: [],
-            status: "IN_COLLECTOR" as const,
-            detail: "MongoDB será consultado pelo worker via COLLECTOR_SOURCES.",
-          })
-        : searchMongoProperties(search),
-    ]);
-    const storedMongoProperties = result.properties.filter(
-      (property) => property.source === "MONGO",
-    );
-    const properties = result.properties.map(collectorPropertyToCardData);
-    if (!mongoRunsInCollector) {
-      properties.unshift(...mongoResult.properties);
-    }
-    const effectiveMongoResult = mongoRunsInCollector && !runningSearch(search.status)
-      ? {
-          properties: storedMongoProperties,
-          status: storedMongoProperties.length > 0 ? ("CONNECTED" as const) : ("NO_MATCHES" as const),
-          detail: storedMongoProperties.length > 0
-            ? `${storedMongoProperties.length} imóvel(is) do MongoDB incluído(s) no resultado.`
-            : "A coleta terminou e nenhum imóvel do MongoDB correspondeu aos filtros.",
-          error: undefined,
-        }
-      : mongoResult;
+    const isAuction = search.transaction === "AUCTION";
+    const result = isAuction
+      ? { properties: [], cached: false }
+      : await propertySearchProperties(database, search);
+    const mongoResult: MongoPropertySourceResult = isAuction
+      ? await searchMongoProperties(search, 100)
+      : { properties: [] };
+    const properties = isAuction
+      ? mongoResult.properties
+      : result.properties.map(collectorPropertyToCardData);
+    const effectiveMongoResult = mongoResult;
     const mongoSource =
       effectiveMongoResult.status || effectiveMongoResult.error || effectiveMongoResult.detail
         ? {
@@ -82,7 +65,7 @@ export async function GET(
       sourceErrors: [
         ...(effectiveMongoResult.error ? [effectiveMongoResult.error] : []),
       ],
-      mongoSource,
+      mongoSource: isAuction ? mongoSource : undefined,
     });
   } catch (error) {
     console.error(error);
@@ -91,17 +74,4 @@ export async function GET(
       { status: 500 },
     );
   }
-}
-
-function runningSearch(status: string) {
-  return status === "PENDING" || status === "RUNNING";
-}
-
-function enabledCollectorSources() {
-  const configured =
-    process.env.COLLECTOR_SOURCES ?? "MONGO,VIVAREAL,QUINTOANDAR,LOPES,CHAVESNAMAO";
-  return configured
-    .split(",")
-    .map((source) => source.trim().toUpperCase())
-    .filter(Boolean);
 }

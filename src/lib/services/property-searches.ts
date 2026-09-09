@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import type { SqlExecutor } from "@/lib/db";
-import { withTransaction } from "@/lib/db";
+import { db, withTransaction } from "@/lib/db";
 import {
   getProperties,
   serializeCollectorProperty,
@@ -173,10 +173,24 @@ export async function findPropertySearch(
     : undefined;
 }
 
+export async function completeAuctionPropertySearch(searchId: string) {
+  await (await db()).query(
+    `UPDATE property_searches SET status='COMPLETED', properties_found=0,
+     started_at=CURRENT_TIMESTAMP, completed_at=CURRENT_TIMESTAMP,
+     updated_at=CURRENT_TIMESTAMP
+     WHERE id=$1 AND transaction='AUCTION' AND status='PENDING'`,
+    [searchId],
+  );
+}
+
 export async function propertySearchProperties(
   database: SqlExecutor,
   search: ReturnType<typeof serializePropertySearch>,
 ): Promise<{ properties: CollectorProperty[]; cached: boolean }> {
+  if (search.transaction === "AUCTION") {
+    return { properties: [], cached: false };
+  }
+  const transaction = search.transaction;
   if (search.status === "COMPLETED") {
     const result = await database.query<CollectorPropertyRow>(
       `SELECT properties.*
@@ -187,15 +201,15 @@ export async function propertySearchProperties(
        LIMIT 100`,
       [search.id],
     );
-    const collected = result.rows.map((row) =>
-      serializeCollectorProperty(row, search.transaction),
-    );
+    const collected = result.rows
+      .filter((row) => row.source.toUpperCase() !== "MONGO")
+      .map((row) => serializeCollectorProperty(row, transaction));
     const stored = await getProperties(
       {
         city: search.city,
         state: search.state,
         neighborhood: search.neighborhood ?? undefined,
-        transaction: search.transaction,
+        transaction,
         propertyType: search.propertyType ?? undefined,
         minPrice: search.minPrice ?? undefined,
         maxPrice: search.maxPrice ?? undefined,
@@ -208,7 +222,9 @@ export async function propertySearchProperties(
     );
     const merged = new Map<number, CollectorProperty>();
     for (const property of collected) merged.set(property.id, property);
-    for (const property of stored.properties) {
+    for (const property of stored.properties.filter(
+      (property) => property.source.toUpperCase() !== "MONGO",
+    )) {
       if (!merged.has(property.id)) merged.set(property.id, property);
     }
 
@@ -223,7 +239,7 @@ export async function propertySearchProperties(
       city: search.city,
       state: search.state,
       neighborhood: search.neighborhood ?? undefined,
-      transaction: search.transaction,
+      transaction,
       propertyType: search.propertyType ?? undefined,
       minPrice: search.minPrice ?? undefined,
       maxPrice: search.maxPrice ?? undefined,
@@ -234,7 +250,12 @@ export async function propertySearchProperties(
     },
     database,
   );
-  return { properties: existing.properties, cached: true };
+  return {
+    properties: existing.properties.filter(
+      (property) => property.source.toUpperCase() !== "MONGO",
+    ),
+    cached: true,
+  };
 }
 
 const numberOrNull = (value: number | string | null) =>

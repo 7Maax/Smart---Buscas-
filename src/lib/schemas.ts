@@ -49,13 +49,14 @@ export const reviewDecisionSchema = z.object({
 });
 
 export const propertyTransactionSchema = z.enum(["SALE", "RENT"]);
+export const propertySearchTransactionSchema = z.enum(["SALE", "RENT", "AUCTION"]);
 
 export const propertySearchRequestSchema = z
   .object({
     city: z.string().trim().min(1),
     state: z.string().trim().min(2).max(40),
     neighborhood: optionalText,
-    transaction: propertyTransactionSchema.default("SALE"),
+    transaction: propertySearchTransactionSchema.default("SALE"),
     propertyType: optionalText,
     minPrice: optionalNumber(z.number().nonnegative()),
     maxPrice: optionalNumber(z.number().nonnegative()),

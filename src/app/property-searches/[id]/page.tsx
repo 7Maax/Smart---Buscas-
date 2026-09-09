@@ -12,7 +12,7 @@ import { api } from "@/lib/client-api";
 import type {
   PropertyCardData,
   PropertySearchStatus,
-  PropertyTransaction,
+  PropertySearchTransaction,
 } from "@/lib/types";
 
 type PropertySearchResponse = {
@@ -22,7 +22,7 @@ type PropertySearchResponse = {
     city: string;
     state: string;
     neighborhood: string | null;
-    transaction: PropertyTransaction;
+    transaction: PropertySearchTransaction;
     propertyType: string | null;
     minPrice: number | null;
     maxPrice: number | null;
@@ -119,6 +119,7 @@ export default function PropertySearchPage() {
   if (!data) return <LoadingState />;
 
   const running = data.search.status === "PENDING" || data.search.status === "RUNNING";
+  const isAuction = data.search.transaction === "AUCTION";
   return (
     <main className="content">
       <div className="section-head">
@@ -144,7 +145,9 @@ export default function PropertySearchPage() {
                 ? `${data.count} imóveis já armazenados são exibidos enquanto buscamos atualizações.`
                 : "Os resultados aparecerão automaticamente assim que o coletor encontrá-los."
               : data.search.status === "COMPLETED"
-                ? `${data.search.propertiesFound} imóveis encontrados nesta coleta.`
+                ? isAuction
+                  ? `${data.count} imóveis de leilão encontrados no banco interno.`
+                  : `${data.search.propertiesFound} imóveis encontrados nesta coleta.`
                 : data.search.error || "Tente iniciar uma nova pesquisa."}
           </p>
         </div>

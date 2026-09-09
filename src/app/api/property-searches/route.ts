@@ -7,7 +7,10 @@ import {
   dispatchPropertySearch,
   propertySearchDispatchMode,
 } from "@/lib/services/property-search-dispatch";
-import { createPropertySearch } from "@/lib/services/property-searches";
+import {
+  completeAuctionPropertySearch,
+  createPropertySearch,
+} from "@/lib/services/property-searches";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,7 +53,9 @@ export async function POST(request: Request) {
       city: municipality.name,
     });
     let dispatchError: string | undefined;
-    if (result.created) {
+    if (result.created && result.search.transaction === "AUCTION") {
+      await completeAuctionPropertySearch(result.search.id);
+    } else if (result.created) {
       try {
         await dispatchPropertySearch(result.search.id);
       } catch (error) {
@@ -69,7 +74,11 @@ export async function POST(request: Request) {
       {
         ok: true,
         searchId: result.search.id,
-        status: dispatchError ? "FAILED" : result.search.status,
+        status: dispatchError
+          ? "FAILED"
+          : result.search.transaction === "AUCTION"
+            ? "COMPLETED"
+            : result.search.status,
         cacheHit: result.cacheHit,
         reused: !result.created,
         dispatchMode: propertySearchDispatchMode(),

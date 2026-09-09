@@ -169,7 +169,7 @@ export function SearchForm({
         </select>
       </div>
       <div className="field"><label htmlFor="neighborhood">Bairro</label><input id="neighborhood" name="neighborhood" defaultValue={defaults.neighborhood} placeholder="Opcional" /></div>
-      <div className="field"><label htmlFor="transaction">Negócio</label><select id="transaction" name="transaction" defaultValue={defaults.transaction}><option value="SALE">Comprar</option><option value="RENT">Alugar</option></select></div>
+      <div className="field"><label htmlFor="transaction">Negócio</label><select id="transaction" name="transaction" defaultValue={defaults.transaction}><option value="SALE">Comprar</option><option value="RENT">Alugar</option><option value="AUCTION">Leilão</option></select></div>
       <div className="field"><label htmlFor="propertyType">Tipo</label><select id="propertyType" name="propertyType" defaultValue={defaults.propertyType ?? ""}><option value="">Todos</option><option value="APARTMENT">Apartamento</option><option value="HOUSE">Casa</option><option value="PENTHOUSE">Cobertura</option><option value="COMMERCIAL_ROOM">Sala comercial</option><option value="COMMERCIAL">Imóvel comercial</option></select></div>
       <div className="field"><label htmlFor="minPrice">Preço mínimo</label><input id="minPrice" name="minPrice" type="number" min="0" defaultValue={defaults.minPrice} placeholder="500000" /></div>
       <div className="field"><label htmlFor="maxPrice">Preço máximo</label><input id="maxPrice" name="maxPrice" type="number" min="0" defaultValue={defaults.maxPrice} placeholder="900000" /></div>
